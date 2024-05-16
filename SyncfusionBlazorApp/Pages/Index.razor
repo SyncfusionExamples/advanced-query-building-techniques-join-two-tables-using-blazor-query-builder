@@ -1,0 +1,32 @@
+﻿@page "/"
+
+<JoinComponent LeftOperand="@leftOperand" RightOperand="@rightOperand" RightTable="@Category" LeftTable="@Product" LeftTableName="@leftTableName" RightTableName="@rightTableName"> 
+
+</JoinComponent> 
+
+ 
+
+@code {
+    private string leftTableName = "Categories";
+    private string rightTableName = "Products"; 
+    private string leftOperand = "CategoryId";
+    private string rightOperand = "CategoryId";
+    public class Product
+    {
+        public string? CategoryId { get; set; }
+        public string? ProductId { get; set; }
+        public string? ProductName { get; set; }
+        public string? SupplierId { get; set; }
+        public int QuantityPerUnit { get; set; }
+        public double UnitPrice { get; set; }
+        public double UnitInStock { get; set; }
+    }
+
+    public class Category
+    {
+        public string? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
+        public string? Description { get; set; }
+        public string? Picture { get; set; }
+    } 
+}

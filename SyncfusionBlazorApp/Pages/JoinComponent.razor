@@ -1,0 +1,377 @@
+﻿@using Syncfusion.Blazor
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.QueryBuilder
+@using Syncfusion.Blazor.Buttons
+
+@using System.Reflection;
+
+@typeparam LeftTable
+@typeparam RightTable
+
+<div class="wrapper">
+    <div class="top">
+      <div class="text-section">
+        <textarea class="content" value="@content"></textarea>
+        <SfButton CssClass="e-query-btn" @onclick="queryBtnClick">Query</SfButton>
+      </div>
+    </div>
+    <SfDialog Width="80%" Height="400" @bind-Visible="isOpen" ShowCloseIcon="true" Target=".wrapper">
+      <DialogTemplates>
+        <Header>Query Builder</Header>
+        <Content>
+          <SfQueryBuilder @ref="QbObj" Separator="." TValue="Complex">
+            <QueryBuilderEvents TValue="Complex"></QueryBuilderEvents>
+            <QueryBuilderColumns>
+                <QueryBuilderColumn Field="@LeftTableName" Label="@LeftTableName" Type="ColumnType.Object">
+                    <QueryBuilderColumns>
+                       @foreach (CustomColumn column in LeftTableItems)
+                       {
+                           <QueryBuilderColumn Field="@column.Field" Label="@column.Label" Type="@column.Type"></QueryBuilderColumn>
+                       }
+                    </QueryBuilderColumns>
+                </QueryBuilderColumn>
+                <QueryBuilderColumn Field="@RightTableName" Label="@RightTableName" Type="ColumnType.Object">
+                    <QueryBuilderColumns>
+                        @foreach (CustomColumn column in RightTableItems)
+                        {
+                            <QueryBuilderColumn Field="@column.Field" Label="@column.Label" Type="@column.Type"></QueryBuilderColumn>
+                        }
+                    </QueryBuilderColumns>
+                </QueryBuilderColumn>
+            </QueryBuilderColumns>
+          </SfQueryBuilder>
+        </Content>
+        <FooterTemplate>
+          <SfButton @onclick="okDialog">OK</SfButton>
+          <SfButton @onclick="cancelDialog">Cancel</SfButton>
+        </FooterTemplate>
+      </DialogTemplates>
+    </SfDialog>
+
+    <div class="left">
+      <div style="margin-top: 27px; display: flex;"> 
+        <div style="margin-left: 100px"> 
+          <SfListBox TItem="CustomColumn" TValue="string[]" DataSource="LeftTableItems" Height="290px" @bind-Value="leftSelectValue"> 
+            <ListBoxFieldSettings Text="Label" Value="Field"></ListBoxFieldSettings> 
+            <ListBoxSelectionSettings ShowCheckbox="true" ShowSelectAll="true"></ListBoxSelectionSettings> 
+            <ListBoxEvents TItem="CustomColumn" TValue="string[]" ValueChange="leftTableChange"></ListBoxEvents> 
+          </SfListBox> 
+        </div> 
+        <div style="margin-left: 100px"> 
+          <SfListBox TItem="CustomColumn" TValue="string[]" DataSource="RightTableItems" Height="290px" @bind-Value="rightSelectValue"> 
+            <ListBoxFieldSettings Text="Label" Value="Field"></ListBoxFieldSettings> 
+            <ListBoxSelectionSettings ShowCheckbox="true" ShowSelectAll="true"></ListBoxSelectionSettings> 
+            <ListBoxEvents TItem="CustomColumn" TValue="string[]" ValueChange="rightTableChange"></ListBoxEvents> 
+          </SfListBox>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="e-relation-property">
+        <div class="e-content">
+          <div class="heading"><b style="padding: 10px;line-height: 30px;">Relation Properties</b></div>
+        </div>
+        <div class="e-content">
+          <span>Left Operand</span>
+          <SfDropDownList Placeholder="Select Operand" @bind-Value="LeftOperand" DataSource="LeftTableItems">
+            <DropDownListEvents TValue="string" TItem="CustomColumn" ValueChange="operandChange"></DropDownListEvents>
+            <DropDownListFieldSettings Text="Label" Value="Field"></DropDownListFieldSettings>
+          </SfDropDownList>
+        </div>
+        <div class="e-content">
+          <span>Right Operand</span>
+          <SfDropDownList Placeholder="Select Operand" @bind-Value="RightOperand" DataSource="RightTableItems ">
+            <DropDownListEvents TValue="string" TItem="CustomColumn" ValueChange="operandChange"></DropDownListEvents>
+            <DropDownListFieldSettings Text="Label" Value="Field"></DropDownListFieldSettings>
+          </SfDropDownList>
+        </div>
+
+        <div class="e-content">
+          <span>Join Type</span>
+          <SfDropDownList Placeholder="Select Join" @bind-Value="joinType" DataSource="Joins">
+            <DropDownListEvents TValue="string" TItem="CustomField" ValueChange="joinChange"></DropDownListEvents>
+            <DropDownListFieldSettings Text="Text" Value="Id"></DropDownListFieldSettings>
+          </SfDropDownList>
+        </div>
+        <div class="e-content">
+          <span>Operator</span>
+          <SfDropDownList Placeholder="Select Operator" @bind-Value="selectOperator" DataSource="Operators">
+            <DropDownListEvents TValue="string" TItem="CustomField" ValueChange="joinChange"></DropDownListEvents>
+            <DropDownListFieldSettings Text="Text" Value="Id"></DropDownListFieldSettings>
+          </SfDropDownList>
+        </div>
+      </div>
+    </div>
+</div>
+@code {
+
+    [Parameter]
+    public string LeftTableName { get; set; }
+
+    [Parameter]
+    public string RightTableName { get; set; }
+
+    [Parameter]
+    public string LeftOperand { get; set; }
+
+    [Parameter]
+    public string RightOperand { get; set; }
+
+    private List<CustomColumn>? LeftTableItems;
+    private List<CustomColumn>? RightTableItems;
+    private string[] leftSelectValue = new string[] { };
+    private string[] rightSelectValue = new string[] { }; 
+    private SfQueryBuilder<Complex>? QbObj;
+    private string content = "";
+    private List<CustomField>? Joins;
+    private string queryContent = "";
+
+    private List<CustomField>? Operators; 
+
+    private string joinType = ""; 
+
+    private string selectOperator = "";
+
+    private bool isOpen; 
+
+    private void queryBtnClick(MouseEventArgs e)
+    {
+        isOpen = true;
+    }
+
+    private void okDialog(MouseEventArgs e)
+    {
+        isOpen = false;
+        getQueryContent(true);
+        getContent();
+    }
+
+    private void cancelDialog(MouseEventArgs e)
+    {
+        isOpen = false;
+        getQueryContent(true);
+        getContent();
+    }
+
+    protected override void OnInitialized()
+    {
+        LeftTableItems = new List<CustomColumn>();
+        PropertyInfo[] propInfoColl = typeof(LeftTable).GetProperties();
+        LeftTableItems = GetColumnModel (propInfoColl, LeftTableItems);
+        RightTableItems = new List<CustomColumn>();
+        propInfoColl = typeof(RightTable).GetProperties();
+        RightTableItems = GetColumnModel (propInfoColl, RightTableItems);
+
+        joinType = "INNER JOIN";
+        selectOperator = "=";
+        Joins = new List<CustomField>()
+      {
+            new CustomField() { Id = "INNER JOIN", Text = "Inner Join" },
+            new CustomField() { Id = "LEFT OUTER JOIN", Text = "Left Outer Join" },
+            new CustomField() { Id = "Right OUTER JOIN", Text = "Right Outer Join" }
+      };
+
+        Operators = new List<CustomField>
+      {
+            new CustomField() { Id = "=", Text = "Equals to" },
+            new CustomField() { Id = "<>", Text = "Does not equals to" },
+            new CustomField() { Id = "<", Text = "Is greater than" },
+            new CustomField() { Id = "<=", Text = "Is greater than or equal to" },
+            new CustomField() { Id = ">", Text = "Is less than" },
+            new CustomField() { Id = ">=", Text = "Is less than or equal to" }
+      };
+    }
+
+    private void operandChange(Syncfusion.Blazor.DropDowns.ChangeEventArgs<string, CustomColumn> e)
+    {
+        getContent();
+    } 
+
+    private void joinChange(Syncfusion.Blazor.DropDowns.ChangeEventArgs<string, CustomField> e)
+    {
+        getContent();
+    }
+
+    private void operatorChange(Syncfusion.Blazor.DropDowns.ChangeEventArgs<string, CustomField> e)
+    {
+        getContent();
+    }
+
+    private void qbCreated()
+    {
+        getContent();
+    } 
+
+    private string getQueryContent(bool? isQueryBuilder = null)
+    {
+        if (QbObj != null)
+        {
+            if (isQueryBuilder != null)
+            {
+                queryContent = QbObj.GetSqlFromRules();
+            }
+            return queryContent;
+     }
+     else
+     {
+        return " ";
+     }
+  } 
+
+  private string getJoinContent() {
+    string joinContent = LeftTableName + " " + joinType + " " + RightTableName + " ON (" +
+      LeftTableName + "." + LeftOperand + " " + selectOperator + " " + RightTableName + "." +
+      RightOperand + ")";
+    return joinContent;
+  }
+
+  private List<CustomColumn> GetColumnModel(PropertyInfo[] columnProp, List<CustomColumn> collection)
+  {
+      if (columnProp != null)
+      {
+         for (var i = 0; i < columnProp.Length; i++)
+         {
+            string? field = columnProp[i].Name;
+            string? type = columnProp[i].PropertyType.FullName;
+            ColumnType columnType = ColumnType. Number;
+            if (type?.IndexOf("String", StringComparison.Ordinal) > -1)
+            {
+               columnType = ColumnType.String;
+            }
+            else if (type?.IndexOf("DateTime", StringComparison.Ordinal) > -1)
+            {
+               columnType = ColumnType.Date;
+            }
+            else if (type?.IndexOf("Boolean", StringComparison.Ordinal) > -1)
+            {
+               columnType = ColumnType.Boolean;
+            }
+            CustomColumn col = new CustomColumn() { Field = field, Label = field, Type = columnType };
+            collection.Add(col);
+         }
+     }
+     return collection;
+  }
+
+  private void leftTableChange(Syncfusion.Blazor.DropDowns.ListBoxChangeEventArgs<string[], CustomColumn> e)
+  {
+    getContent();
+  }
+
+  private void rightTableChange(Syncfusion.Blazor.DropDowns.ListBoxChangeEventArgs<string[], CustomColumn> e)
+  {
+    getContent();
+  }
+
+  private string getSelectContent()
+  {
+    string selectContent = "SELECT";
+    if (leftSelectValue != null)
+    {
+      for (int i = 0; i < leftSelectValue.Count(); i++)
+      {
+        selectContent += " " + LeftTableName + "." + leftSelectValue[i] + ",";
+      }
+    }
+    if (rightSelectValue != null)
+    {
+      for (int i = 0; i < rightSelectValue.Count(); i++)
+      {
+        selectContent += " " + RightTableName + "." + rightSelectValue[i] + ",";
+      }
+    }
+    if ((leftSelectValue != null && leftSelectValue.Count() > 0) || (rightSelectValue != null && rightSelectValue.Count() > 0))
+    {
+        selectContent = selectContent.Substring(0, selectContent.Count() - 1);
+        return selectContent + " FROM (";
+    }
+    return "";
+  }
+
+  private void getContent()
+  {
+     string selectContent; string queryContent; string joinContent;
+     if ((leftSelectValue == null || leftSelectValue.Count() < 1) && (rightSelectValue == null || rightSelectValue.Count() < 1)) {
+       content = "Select atleast 1 Column";
+    }
+    else
+    {
+        selectContent = getSelectContent();
+        queryContent = getQueryContent();
+        joinContent = getJoinContent();
+        if (queryContent != "") {
+          content = selectContent + joinContent + ") WHERE(" + queryContent + ")";
+        } else {
+          content = selectContent + joinContent + ')';
+        }
+     }
+  }
+
+  public class CustomColumn
+  {
+     public string? Field { get; set; }
+     public ColumnType Type { get; set; }
+     public string? Label { get; set; }
+  }
+
+  public class CustomField
+  {
+     public string? Id { get; set; }
+     public string? Text { get; set; }
+  }
+
+  public class Complex
+  {
+     public LeftTable? LeftTable { get; set; }
+     public RightTable? RightTable { get; set; }
+  }
+}
+
+<style>
+
+    .left {
+      float: left;
+      width: 69%;
+      border: 1px solid grey;
+      height: 450px;
+    }
+
+    .right {
+      float: right;
+      width: 30%;
+      border: 1px solid grey;
+      height: 450px;
+    }
+
+    .top {
+      border: 1px solid grey;
+    }
+
+    .top .e-button-content {
+      margin: 10px 0 10px 0;
+    }
+
+    .content {
+      width: 100%;
+      height: 100px;
+    }
+
+    .e-query-builder {
+      width: 97.7%;
+      margin: 10px;
+    }
+
+    .e-relation-property .e-content {
+      margin: 10px;
+    }
+
+    button.e-control.e-btn.e-lib {
+      margin-left: 10px;
+    }
+
+    .wrapper {
+      height: 550px;
+    }
+</style>
