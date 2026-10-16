@@ -62,10 +62,6 @@ dotnet run
 
 7. Open the local application URL displayed in the terminal after the application starts successfully.
 
-## Project Structure
-
-`SyncfusionBlazorApp/Pages/Index.razor` — primary page containing the Query Builder implementation and complex data-binding scenario. 
-
 ## Support and Feedback
 
 - For general product questions, visit the [Syncfusion Community Forum](https://www.syncfusion.com/forums) or [Syncfusion Support](https://www.syncfusion.com/support).
